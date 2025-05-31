@@ -73,7 +73,10 @@ nav button.active {
 }
 
 .agenda-cell.has-data {
-  background-color: #d1e7dd;
+  background-color: #e3f2fd; /* bleu clair */
+  border: 2px solid #2196f3; /* bleu vif */
+  box-shadow: 0 0 6px rgba(33, 150, 243, 0.4);
+  transition: background-color 0.3s ease;
 }
 
 .agenda-cell.active {
