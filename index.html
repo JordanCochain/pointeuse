@@ -18,7 +18,9 @@
     <button data-tab="agenda">Agenda</button>
     <button data-tab="parametres">Paramètres</button>
     <button data-tab="contact">Contact</button>
+    <button data-tab="evenements">Événements</button>
   </nav>
+
   <section id="pointage" class="tab-content active">
     <label for="date">Date :</label>
     <input type="date" id="date" />
@@ -33,6 +35,16 @@
     <p id="salaire-estime"></p>
     <button id="btn-enregistrer">Enregistrer</button>
   </section>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => console.log("✅ Service Worker enregistré"))
+        .catch(err => console.error("Erreur Service Worker", err));
+    }
+  </script>
+
+  <!-- Section AGENDA -->
   <section id="agenda" class="tab-content">
     <h2>Agenda</h2>
     <div class="agenda-controls">
@@ -42,33 +54,22 @@
     </div>
     <div id="grille-agenda" class="agenda-grid"></div>
     <div id="detail-jour" class="detail-jour"></div>
-
-    <div id="ajout-evenement-persistent" class="detail-jour">
-      <h4>Ajouter un événement</h4>
-      <input type="text" id="event-title-global" placeholder="Titre de l'événement" required /><br/>
-      <label>Du <input type="date" id="event-start-date-global" /> au <input type="date" id="event-end-date-global" /></label><br/>
-      <label>De <input type="time" id="event-start-time-global" /> à <input type="time" id="event-end-time-global" /></label><br/>
-      <input type="text" id="event-location-global" placeholder="Lieu" /><br/>
-      <textarea id="event-description-global" placeholder="Description"></textarea><br/>
-      <button id="btn-add-global-event">Ajouter l'événement</button>
-    </div>
-
     <button id="btn-export-excel" class="btn-success" style="margin-top:15px;">
       Exporter heures mensuelles Excel
     </button>
   </section>
-  <!-- SECTION PARAMÈTRES -->
+
+  <!-- Section PARAMETRES -->
   <section id="parametres" class="tab-content">
     <label for="taux-horaire">Taux horaire (€) :</label>
     <input type="number" id="taux-horaire" step="0.01" min="0" />
-    
     <label for="prime-journaliere">Prime journalière (€) :</label>
     <input type="number" id="prime-journaliere" step="0.01" min="0" />
-    
     <button id="btn-sauvegarder">Sauvegarder</button>
     <p id="msg-sauvegarde"></p>
   </section>
-  <!-- SECTION CONTACT -->
+
+  <!-- Section CONTACT -->
   <section id="contact" class="tab-content">
     <h2>Contacts Professionnels</h2>
     <form id="form-contact">
@@ -80,25 +81,37 @@
     </form>
     <div id="contacts-list" class="contacts-list-container"></div>
   </section>
+
+  <section id="evenements" class="tab-content">
+    <h2>Créer un événement</h2>
+      <form id="form-evenement"></form>
+    <div id="liste-evenements" style="margin-top: 20px;"></div>
+  </section>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB_XTvJ5CO0NH3a5hfyz-hQZ_k-QoKtFZc",
+      authDomain: "pointage-app.firebaseapp.com",
+      projectId: "pointage-app",
+      storageBucket: "pointage-app.appspot.com",
+      messagingSenderId: "978164230245",
+      appId: "1:978164230245:web:b7f3f3e87b299b26f0a6d4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Rendre accessible à app.js
+    window.db = db;
+  </script>
+
+  <!-- Autres scripts -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="app.js"></script>
 
-  <script>
-    const buttons = document.querySelectorAll("nav button");
-    const sections = document.querySelectorAll("section");
-
-    buttons.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        buttons.forEach((b) => b.classList.remove("active"));
-        btn.classList.add("active");
-        const target = btn.getAttribute("data-tab");
-        sections.forEach((s) => s.classList.toggle("active", s.id === target));
-      });
-    });
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js")
-        .then(() => console.log("✅ Service Worker enregistré"))
-        .catch(err => console.error("Erreur Service Worker", err));
-    }
-  </script>
+</body>
+</html>

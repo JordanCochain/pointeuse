@@ -1,11 +1,24 @@
 // ---------- Données et initialisation ----------
 let donnees = JSON.parse(localStorage.getItem("pointages")) || {};
+if (window.firebase && window.db) {
+  const userId = localStorage.getItem("userId") || "utilisateur_test";
+  firebase.firestore().collection("pointages").doc(userId).get()
+    .then((doc) => {
+      if (doc.exists) {
+        donnees = doc.data();
+        localStorage.setItem("pointages", JSON.stringify(donnees));
+        afficherInfos(formatDate(new Date()));
+        afficherMois(currentYear, currentMonth);
+      }
+    })
+    .catch((error) => console.error("Erreur de récupération Firestore :", error));
+}
+
 let contacts = JSON.parse(localStorage.getItem("contacts")) || [];
 let currentDate = new Date();
 let currentMonth = currentDate.getMonth();
 let currentYear = currentDate.getFullYear();
 let currentTab = localStorage.getItem("ongletActif") || "pointage";
-
 // ---------- Fonctions de format ----------
 function formatDate(date) {
   const year = date.getFullYear();
@@ -17,7 +30,6 @@ function formatDate(date) {
 function toTimeString(date) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
-
 // ---------- Fonctions de pointage ----------
 document.getElementById("btn-arrivee").onclick = () => enregistrerHeure("arrivee");
 document.getElementById("btn-debut-pause").onclick = () => enregistrerHeure("debutPause");
@@ -33,8 +45,17 @@ function enregistrerHeure(type) {
   if (!donnees[date]) donnees[date] = {};
   donnees[date][type] = new Date().toString();
   localStorage.setItem("pointages", JSON.stringify(donnees));
+
+  if (window.firebase && window.db) {
+    const userId = localStorage.getItem("userId") || "utilisateur_test";
+    firebase.firestore().collection("pointages").doc(userId).set(donnees)
+      .then(() => console.log("Données sauvegardées dans Firestore"))
+      .catch((error) => console.error("Erreur de sauvegarde Firestore :", error));
+  }
+
   afficherInfos(date);
 }
+
 function afficherInfos(dateStr) {
   const pointage = donnees[dateStr];
   if (!pointage) {
@@ -95,7 +116,6 @@ afficherInfos(formatDate(new Date()));
 document.getElementById("date").addEventListener("change", (e) => {
   afficherInfos(e.target.value);
 });
-
 // ---------- Gestion des onglets ----------
 document.querySelectorAll("nav button").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -104,8 +124,11 @@ document.querySelectorAll("nav button").forEach(btn => {
     const target = btn.getAttribute("data-tab");
     document.querySelectorAll("section").forEach(s => s.classList.toggle("active", s.id === target));
     localStorage.setItem("ongletActif", target);
+
     if (target === "pointage") {
       afficherInfos(document.getElementById("date").value);
+    } else if (target === "evenements") {
+      afficherFormulaireEvenement(); // ← affiche formulaire enrichi dans l'onglet
     }
   });
 });
@@ -152,7 +175,7 @@ function afficherMois(annee, mois) {
   });
 
   const joursSemaine = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-  joursSemaine.forEach((j) => {
+  joursSemaine.forEach(j => {
     const header = document.createElement("div");
     header.classList.add("agenda-header");
     header.textContent = j;
@@ -214,19 +237,18 @@ function afficherMois(annee, mois) {
       afficherInfos(dateStr);
       afficherDetailDansAgenda(dateStr);
     };
+
     calendrier.appendChild(cell);
   }
 }
 
 afficherMois(currentYear, currentMonth);
-
 // ---------- DÉTAIL JOUR avec résumé pointage + événements ----------
 function afficherDetailDansAgenda(dateStr) {
   const container = document.getElementById("detail-jour");
   const pointage = donnees[dateStr] || {};
   let html = `<h3>Détail du ${dateStr}</h3>`;
 
-  // Résumé pointage
   const arrivee = pointage.arrivee ? new Date(pointage.arrivee) : null;
   const debutPause = pointage.debutPause ? new Date(pointage.debutPause) : null;
   const finPause = pointage.finPause ? new Date(pointage.finPause) : null;
@@ -257,10 +279,13 @@ function afficherDetailDansAgenda(dateStr) {
     </p>
   `;
 
-  // Événements
   if (pointage.evenements && pointage.evenements.length > 0) {
     html += "<ul>" + pointage.evenements.map(ev =>
-      `<li><strong>${ev.title}</strong><br>Du ${ev.startDate} au ${ev.endDate} de ${ev.startTime} à ${ev.endTime}<br>Lieu : ${ev.location}<br>Description : ${ev.description} <button onclick="supprimerEvenement('${dateStr}', '${ev.title}')">🗑️</button></li>`
+      `<li><strong>${ev.title}</strong><br>
+      Du ${ev.startDate} au ${ev.endDate} de ${ev.startTime || "?"} à ${ev.endTime || "?"}<br>
+      Lieu : ${ev.location}<br>
+      Description : ${ev.description}
+      </li>`
     ).join("") + "</ul>";
   } else {
     html += "<p>Aucun événement.</p>";
@@ -295,16 +320,19 @@ function exportExcelMois(annee, mois) {
       }
     }
     const heuresSup = Math.max(0, heures - 7);
+    const evenementsText = (p.evenements || []).map(ev =>
+      `${ev.title} (${ev.startDate} → ${ev.endDate})`
+    ).join(" | ");
 
-    const evenementsText = (p.evenements || []).map(ev => `${ev.title} (${ev.startDate} → ${ev.endDate})`).join(" | ");
-
-    donneesMois.push([dateStr, arrivee, debutPause, finPause, depart, heures.toFixed(2), heuresSup.toFixed(2), evenementsText]);
+    donneesMois.push([
+      dateStr, arrivee, debutPause, finPause, depart,
+      heures.toFixed(2), heuresSup.toFixed(2), evenementsText
+    ]);
   }
 
   const csvContent = donneesMois.map(e => e.join(";")).join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
-
   const a = document.createElement("a");
   a.href = url;
   a.download = `pointage-${annee}-${(mois + 1).toString().padStart(2, "0")}.csv`;
@@ -312,55 +340,7 @@ function exportExcelMois(annee, mois) {
   a.click();
   document.body.removeChild(a);
 }
-// ---------- FORMULAIRE D'ÉVÉNEMENT PERMANENT ----------
-function initialiserFormulaireEvenementPermanent() {
-  const container = document.getElementById("formulaire-evenement-permanent");
-  if (!container) return;
-
-  container.innerHTML = `
-    <h3>Ajouter un événement</h3>
-    <input type="text" id="event-title" placeholder="Titre de l'événement" required /><br/>
-    <label>Du <input type="date" id="event-start-date" /> au <input type="date" id="event-end-date" /></label><br/>
-    <label>De <input type="time" id="event-start-time" /> à <input type="time" id="event-end-time" /></label><br/>
-    <input type="text" id="event-location" placeholder="Lieu" /><br/>
-    <textarea id="event-description" placeholder="Description"></textarea><br/>
-    <button id="btn-add-event">Ajouter l'événement</button>
-  `;
-
-  document.getElementById("btn-add-event").onclick = () => {
-    const title = document.getElementById("event-title").value.trim();
-    const startDate = document.getElementById("event-start-date").value;
-    const endDate = document.getElementById("event-end-date").value;
-    const startTime = document.getElementById("event-start-time").value;
-    const endTime = document.getElementById("event-end-time").value;
-    const location = document.getElementById("event-location").value.trim();
-    const description = document.getElementById("event-description").value.trim();
-
-    if (!title || !startDate || !endDate) return alert("Veuillez remplir le titre et les dates.");
-
-    const jours = getDateRange(startDate, endDate);
-    jours.forEach(date => {
-      if (!donnees[date]) donnees[date] = {};
-      if (!donnees[date].evenements) donnees[date].evenements = [];
-
-      donnees[date].evenements.push({
-        title,
-        startDate,
-        endDate,
-        startTime,
-        endTime,
-        location,
-        description
-      });
-    });
-
-    localStorage.setItem("pointages", JSON.stringify(donnees));
-    alert("Événement(s) ajouté(s) avec succès !");
-    initialiserFormulaireEvenementPermanent(); // Reset form
-    afficherMois(currentYear, currentMonth); // Refresh calendrier
-  };
-}
-
+// ---------- FORMULAIRE ÉVÉNEMENTS (onglet uniquement) ----------
 function getDateRange(start, end) {
   const range = [];
   const dStart = new Date(start);
@@ -371,8 +351,64 @@ function getDateRange(start, end) {
   }
   return range;
 }
+function afficherFormulaireEvenement() {
+  const formContainer = document.getElementById("form-evenement");
+  if (!formContainer) return;
 
-// Appeler à la fin
-document.addEventListener("DOMContentLoaded", () => {
-  initialiserFormulaireEvenementPermanent();
-});
+  formContainer.innerHTML = `
+    <label for="titre">Titre :</label>
+    <input type="text" id="titre" required />
+
+    <label for="date-debut">Date de début :</label>
+    <input type="date" id="date-debut" required />
+
+    <label for="heure-debut">Heure de début :</label>
+    <input type="time" id="heure-debut" />
+
+    <label for="date-fin">Date de fin :</label>
+    <input type="date" id="date-fin" required />
+
+    <label for="heure-fin">Heure de fin :</label>
+    <input type="time" id="heure-fin" />
+
+    <label for="lieu">Lieu :</label>
+    <input type="text" id="lieu" />
+
+    <label for="description">Description :</label>
+    <textarea id="description" rows="3"></textarea>
+
+    <button type="submit">Ajouter l’événement</button>
+  `;
+
+  formContainer.querySelector("button[type='submit']").onclick = async (e) => {
+    e.preventDefault();
+
+    const evenement = {
+      title: document.getElementById("titre").value.trim(),
+      startDate: document.getElementById("date-debut").value,
+      endDate: document.getElementById("date-fin").value,
+      startTime: document.getElementById("heure-debut").value,
+      endTime: document.getElementById("heure-fin").value,
+      location: document.getElementById("lieu").value.trim(),
+      description: document.getElementById("description").value.trim(),
+      userId: localStorage.getItem("userId") || "utilisateur_test",
+      timestamp: new Date().toISOString()
+    };
+
+    const jours = getDateRange(evenement.startDate, evenement.endDate);
+    jours.forEach(date => {
+      if (!donnees[date]) donnees[date] = {};
+      if (!donnees[date].evenements) donnees[date].evenements = [];
+      donnees[date].evenements.push(evenement);
+    });
+
+    localStorage.setItem("pointages", JSON.stringify(donnees));
+    if (window.firebase && window.db) {
+      await firebase.firestore().collection("evenements").add(evenement);
+    }
+
+    alert("Événement ajouté !");
+    afficherFormulaireEvenement(); // reset dynamique
+    afficherMois(currentYear, currentMonth);
+  };
+}
