@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mon App de Pointage</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <meta name="theme-color" content="#0d47a1" />
 </head>
 <body>
 
@@ -16,24 +19,20 @@
     <button data-tab="parametres">Paramètres</button>
     <button data-tab="contact">Contact</button>
   </nav>
-
-  <!-- Section POINTAGE -->
   <section id="pointage" class="tab-content active">
     <label for="date">Date :</label>
     <input type="date" id="date" />
     <div class="buttons-group" style="margin-top:10px;">
-      <button id="btn-arrivee">Pointer arrivée</button>
-      <button id="btn-debut-pause">Début pause</button>
-      <button id="btn-fin-pause">Fin pause</button>
-      <button id="btn-depart">Départ</button>
+      <button id="btn-arrivee">Pointer arrivée</button> <span id="heure-arrivee">Non pointé</span><br />
+      <button id="btn-debut-pause">Début pause</button> <span id="heure-debutPause">Non pointé</span><br />
+      <button id="btn-fin-pause">Fin pause</button> <span id="heure-finPause">Non pointé</span><br />
+      <button id="btn-depart">Départ</button> <span id="heure-depart">Non pointé</span><br />
     </div>
     <p id="heures-travail" style="margin-top:20px;"></p>
     <p id="heures-sup"></p>
     <p id="salaire-estime"></p>
     <button id="btn-enregistrer">Enregistrer</button>
   </section>
-
-  <!-- Section AGENDA -->
   <section id="agenda" class="tab-content">
     <h2>Agenda</h2>
     <div class="agenda-controls">
@@ -43,22 +42,33 @@
     </div>
     <div id="grille-agenda" class="agenda-grid"></div>
     <div id="detail-jour" class="detail-jour"></div>
+
+    <div id="ajout-evenement-persistent" class="detail-jour">
+      <h4>Ajouter un événement</h4>
+      <input type="text" id="event-title-global" placeholder="Titre de l'événement" required /><br/>
+      <label>Du <input type="date" id="event-start-date-global" /> au <input type="date" id="event-end-date-global" /></label><br/>
+      <label>De <input type="time" id="event-start-time-global" /> à <input type="time" id="event-end-time-global" /></label><br/>
+      <input type="text" id="event-location-global" placeholder="Lieu" /><br/>
+      <textarea id="event-description-global" placeholder="Description"></textarea><br/>
+      <button id="btn-add-global-event">Ajouter l'événement</button>
+    </div>
+
     <button id="btn-export-excel" class="btn-success" style="margin-top:15px;">
       Exporter heures mensuelles Excel
     </button>
   </section>
-
-  <!-- Section PARAMETRES -->
+  <!-- SECTION PARAMÈTRES -->
   <section id="parametres" class="tab-content">
     <label for="taux-horaire">Taux horaire (€) :</label>
     <input type="number" id="taux-horaire" step="0.01" min="0" />
+    
     <label for="prime-journaliere">Prime journalière (€) :</label>
     <input type="number" id="prime-journaliere" step="0.01" min="0" />
+    
     <button id="btn-sauvegarder">Sauvegarder</button>
     <p id="msg-sauvegarde"></p>
   </section>
-
-  <!-- Section CONTACT -->
+  <!-- SECTION CONTACT -->
   <section id="contact" class="tab-content">
     <h2>Contacts Professionnels</h2>
     <form id="form-contact">
@@ -70,25 +80,25 @@
     </form>
     <div id="contacts-list" class="contacts-list-container"></div>
   </section>
-
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="app.js"></script>
 
   <script>
-    // Gestion simple des onglets
-    const buttons = document.querySelectorAll('nav button');
-    const sections = document.querySelectorAll('section');
+    const buttons = document.querySelectorAll("nav button");
+    const sections = document.querySelectorAll("section");
 
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        buttons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        const target = btn.getAttribute('data-tab');
-        sections.forEach(s => s.classList.toggle('active', s.id === target));
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        const target = btn.getAttribute("data-tab");
+        sections.forEach((s) => s.classList.toggle("active", s.id === target));
       });
     });
-  </script>
 
-</body>
-</html>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .then(() => console.log("✅ Service Worker enregistré"))
+        .catch(err => console.error("Erreur Service Worker", err));
+    }
+  </script>
