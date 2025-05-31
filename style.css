@@ -265,36 +265,6 @@ form#form-contact button:hover {
   transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.btn-primary {
-  background-color: #0d47a1;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #08306b;
-  box-shadow: 0 6px 16px rgba(8, 48, 107, 0.5);
-}
-
-.btn-secondary {
-  background-color: #546e7a;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background-color: #37474f;
-  box-shadow: 0 6px 16px rgba(55, 71, 79, 0.5);
-}
-
-.btn-danger {
-  background-color: #b00020;
-  color: white;
-}
-
-.btn-danger:hover {
-  background-color: #7f0018;
-  box-shadow: 0 6px 16px rgba(127, 0, 24, 0.5);
-}
-
 .infos p {
   margin: 12px 0;
   font-weight: 700;
@@ -495,4 +465,58 @@ form#form-contact button:hover {
   #form-evenement button {
     font-size: 1em;
   }
+}
+/* Style pour les boutons désactivés */
+/* Style pour les boutons désactivés */
+button:disabled,
+.buttons-group button:disabled,
+.buttons-group .btn-disabled {
+  background-color: #bdbdbd !important;
+  color: #444 !important;
+  border: 1px solid #888 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+/* Message d'information temporaire sous les boutons */
+.bouton-info {
+  display: none;
+  font-size: 0.85em;
+  color: #c62828;
+  margin-top: 4px;
+}
+
+.bouton-info.visible {
+  display: block;
+  animation: fadeInOut 2.5s ease-out;
+}
+
+@keyframes fadeInOut {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+/* === STYLES SPÉCIFIQUES AUX BOUTONS DE POINTAGE (actif / inactif) === */
+
+.btn-pointage {
+  width: 100%;
+  padding: 14px 0;
+  font-weight: 700;
+  font-size: 1.1em;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 3px 8px rgba(13, 71, 161, 0.2);
+  color: white;
+  background-color: #0d47a1; /* Couleur par défaut : bleu foncé */
+}
+
+.btn-pointage.inactive {
+  background-color: #9e9e9e !important; /* Couleur secondaire : gris clair */
+  cursor: not-allowed;
+  color: #eee;
+  box-shadow: none;
 }

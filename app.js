@@ -19,6 +19,24 @@ let currentDate = new Date();
 let currentMonth = currentDate.getMonth();
 let currentYear = currentDate.getFullYear();
 let currentTab = localStorage.getItem("ongletActif") || "pointage";
+document.getElementById("form-contact").addEventListener("submit", function(e) {
+  e.preventDefault();
+
+  const contact = {
+    nom: this.nom.value,
+    prenom: this.prenom.value,
+    telephone: this.telephone.value,
+    email: this.email.value
+  };
+
+  contacts.push(contact);
+  localStorage.setItem("contacts", JSON.stringify(contacts));
+
+  afficherContacts(); // 👈 pour recharger visuellement
+
+  this.reset(); // réinitialiser le formulaire
+});
+
 // ---------- Fonctions de format ----------
 function formatDate(date) {
   const year = date.getFullYear();
@@ -30,6 +48,19 @@ function formatDate(date) {
 function toTimeString(date) {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
+
+function afficherInfoBouton(type, message) {
+  const info = document.getElementById("info-" + type);
+  if (info) {
+    info.textContent = message;
+    info.classList.add("visible");
+
+    setTimeout(() => {
+      info.classList.remove("visible");
+    }, 2500); // cache après 2,5s
+  }
+}
+
 // ---------- Fonctions de pointage ----------
 document.getElementById("btn-arrivee").onclick = () => enregistrerHeure("arrivee");
 document.getElementById("btn-debut-pause").onclick = () => enregistrerHeure("debutPause");
@@ -43,6 +74,12 @@ document.getElementById("btn-enregistrer").onclick = () => {
 function enregistrerHeure(type) {
   const date = document.getElementById("date").value || formatDate(new Date());
   if (!donnees[date]) donnees[date] = {};
+
+  if (donnees[date][type]) {
+    alert(`Vous avez déjà pointé pour "${type}".`);
+    return;
+  }
+
   donnees[date][type] = new Date().toString();
   localStorage.setItem("pointages", JSON.stringify(donnees));
 
@@ -54,20 +91,52 @@ function enregistrerHeure(type) {
   }
 
   afficherInfos(date);
+  mettreAJourBoutons(date); // 👈 on appelle la fonction de verrouillage
+}
+
+function mettreAJourBoutons(dateStr) {
+  const pointage = donnees[dateStr] || {};
+
+  const correspondance = {
+    "btn-arrivee": "arrivee",
+    "btn-debut-pause": "debutPause",
+    "btn-fin-pause": "finPause",
+    "btn-depart": "depart"
+  };
+
+  Object.entries(correspondance).forEach(([idBtn, type]) => {
+    const bouton = document.getElementById(idBtn);
+    const info = document.getElementById("info-" + type);
+    const dejaPointe = !!pointage[type];
+
+    if (bouton) {
+      bouton.disabled = dejaPointe;
+      bouton.classList.remove("inactive");
+      if (dejaPointe) bouton.classList.add("inactive");
+    }
+
+    if (info) {
+      info.textContent = dejaPointe ? "Déjà pointé" : "";
+      info.classList.toggle("visible", dejaPointe);
+    }
+  });
 }
 
 function afficherInfos(dateStr) {
   const pointage = donnees[dateStr];
-  if (!pointage) {
-    document.getElementById("heures-travail").textContent = "";
-    document.getElementById("heures-sup").textContent = "";
-    document.getElementById("salaire-estime").textContent = "";
-    afficherHeurePointage("arrivee", "");
-    afficherHeurePointage("debutPause", "");
-    afficherHeurePointage("finPause", "");
-    afficherHeurePointage("depart", "");
-    return;
-  }
+if (!pointage) {
+  document.getElementById("heures-travail").textContent = "";
+  document.getElementById("heures-sup").textContent = "";
+  document.getElementById("salaire-estime").textContent = "";
+
+  afficherHeurePointage("arrivee", "");
+  afficherHeurePointage("debutPause", "");
+  afficherHeurePointage("finPause", "");
+  afficherHeurePointage("depart", "");
+
+  mettreAJourBoutons(dateStr);
+  return;
+}
 
   const arrivee = pointage.arrivee ? new Date(pointage.arrivee) : null;
   const debutPause = pointage.debutPause ? new Date(pointage.debutPause) : null;
@@ -110,11 +179,38 @@ function afficherHeurePointage(type, texteHeure) {
   }
 }
 
+function enregistrerHeure(type) {
+  const date = document.getElementById("date").value || formatDate(new Date());
+
+  if (donnees[date] && donnees[date][type]) {
+    // ⛔ Déjà pointé, on affiche une indication
+    afficherInfoBouton(type, "Déjà pointé !");
+    return;
+  }
+
+  if (!donnees[date]) donnees[date] = {};
+  donnees[date][type] = new Date().toString();
+
+  localStorage.setItem("pointages", JSON.stringify(donnees));
+
+  if (window.firebase && window.db) {
+    const userId = localStorage.getItem("userId") || "utilisateur_test";
+    firebase.firestore().collection("pointages").doc(userId).set(donnees)
+      .then(() => console.log("Données sauvegardées dans Firestore"))
+      .catch((error) => console.error("Erreur de sauvegarde Firestore :", error));
+  }
+
+  afficherInfos(date);
+  mettreAJourBoutons(date);
+}
+
 document.getElementById("date").value = formatDate(new Date());
 afficherInfos(formatDate(new Date()));
 
 document.getElementById("date").addEventListener("change", (e) => {
+  const date = e.target.value;
   afficherInfos(e.target.value);
+  mettreAJourBoutons(date); // ✅ ajoute ceci ici
 });
 // ---------- Gestion des onglets ----------
 document.querySelectorAll("nav button").forEach(btn => {
@@ -129,6 +225,8 @@ document.querySelectorAll("nav button").forEach(btn => {
       afficherInfos(document.getElementById("date").value);
     } else if (target === "evenements") {
       afficherFormulaireEvenement(); // ← affiche formulaire enrichi dans l'onglet
+    } else if (target === "contact") {
+      afficherContacts(); // ✅ affiche les contacts à l'ouverture de l'onglet
     }
   });
 });
@@ -136,7 +234,37 @@ document.querySelectorAll("nav button").forEach(btn => {
 document.addEventListener("DOMContentLoaded", () => {
   const boutonActif = document.querySelector(`nav button[data-tab='${currentTab}']`);
   if (boutonActif) boutonActif.click();
+   afficherContacts(); // 👈 ajouter ici
 });
+
+function afficherContacts() {
+  const container = document.getElementById("contacts-list");
+  container.innerHTML = ""; // vider avant de réafficher
+
+  if (contacts.length === 0) {
+    container.innerHTML = "<p>Aucun contact enregistré.</p>";
+    return;
+  }
+
+  contacts.forEach((contact, index) => {
+    const div = document.createElement("div");
+    div.className = "contact-item";
+    div.innerHTML = `
+      <div class="contact-info">
+        <div class="contact-nomprenom">${contact.nom} ${contact.prenom}</div>
+        <div class="contact-contact">${contact.telephone} | ${contact.email}</div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function supprimerContact(index) {
+  contacts.splice(index, 1);
+  localStorage.setItem("contacts", JSON.stringify(contacts));
+  afficherContacts();
+}
+
 // ---------- AGENDA ----------
 const moisLabel = document.getElementById("mois-annee-label");
 const calendrier = document.getElementById("grille-agenda");

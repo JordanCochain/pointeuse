@@ -21,20 +21,34 @@
     <button data-tab="evenements">Événements</button>
   </nav>
 
-  <section id="pointage" class="tab-content active">
-    <label for="date">Date :</label>
-    <input type="date" id="date" />
-    <div class="buttons-group" style="margin-top:10px;">
-      <button id="btn-arrivee">Pointer arrivée</button> <span id="heure-arrivee">Non pointé</span><br />
-      <button id="btn-debut-pause">Début pause</button> <span id="heure-debutPause">Non pointé</span><br />
-      <button id="btn-fin-pause">Fin pause</button> <span id="heure-finPause">Non pointé</span><br />
-      <button id="btn-depart">Départ</button> <span id="heure-depart">Non pointé</span><br />
-    </div>
-    <p id="heures-travail" style="margin-top:20px;"></p>
-    <p id="heures-sup"></p>
-    <p id="salaire-estime"></p>
-    <button id="btn-enregistrer">Enregistrer</button>
-  </section>
+<section id="pointage" class="tab-content active">
+  <label for="date">Date :</label>
+  <input type="date" id="date" />
+
+<div class="buttons-group" style="margin-top:10px;">
+  <!-- ARRIVÉE -->
+<button id="btn-arrivee" class="btn-pointage">Pointer arrivée</button>
+<span id="heure-arrivee">Non pointé</span>
+<div id="info-arrivee" class="bouton-info"></div>
+
+<button id="btn-debut-pause" class="btn-pointage">Début pause</button>
+<span id="heure-debutPause">Non pointé</span>
+<div id="info-debutPause" class="bouton-info"></div>
+
+<button id="btn-fin-pause" class="btn-pointage">Fin pause</button>
+<span id="heure-finPause">Non pointé</span>
+<div id="info-finPause" class="bouton-info"></div>
+
+<button id="btn-depart" class="btn-pointage">Départ</button>
+<span id="heure-depart">Non pointé</span>
+<div id="info-depart" class="bouton-info"></div>
+</div>
+
+  <p id="heures-travail" style="margin-top:20px;"></p>
+  <p id="heures-sup"></p>
+  <p id="salaire-estime"></p>
+  <button id="btn-enregistrer">Enregistrer</button>
+</section>
 
   <script>
     if ('serviceWorker' in navigator) {
