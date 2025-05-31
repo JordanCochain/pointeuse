@@ -332,16 +332,21 @@ form#form-contact button:hover {
     font-size: 1em;
   }
 
-  .agenda-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
+.agenda-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+  overflow-x: hidden;
+}
 
-  .agenda-cell,
-  .agenda-header {
-    padding: 8px 6px;
-    font-size: 0.9em;
-  }
+.agenda-cell,
+.agenda-header {
+  padding: 6px;
+  font-size: 0.75em;
+  word-break: break-word;
+  min-width: 0;
+}
 
   .detail-jour {
     padding: 10px;
