@@ -7,9 +7,6 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Ton contenu ici -->
-</body>
-</html>
 
   <h1>Application Pointage</h1>
 
@@ -24,18 +21,15 @@
   <section id="pointage" class="tab-content active">
     <label for="date">Date :</label>
     <input type="date" id="date" />
-
     <div class="buttons-group" style="margin-top:10px;">
       <button id="btn-arrivee">Pointer arrivée</button>
       <button id="btn-debut-pause">Début pause</button>
       <button id="btn-fin-pause">Fin pause</button>
       <button id="btn-depart">Départ</button>
     </div>
-
     <p id="heures-travail" style="margin-top:20px;"></p>
     <p id="heures-sup"></p>
     <p id="salaire-estime"></p>
-
     <button id="btn-enregistrer">Enregistrer</button>
   </section>
 
@@ -49,7 +43,6 @@
     </div>
     <div id="grille-agenda" class="agenda-grid"></div>
     <div id="detail-jour" class="detail-jour"></div>
-
     <button id="btn-export-excel" class="btn-success" style="margin-top:15px;">
       Exporter heures mensuelles Excel
     </button>
@@ -59,41 +52,24 @@
   <section id="parametres" class="tab-content">
     <label for="taux-horaire">Taux horaire (€) :</label>
     <input type="number" id="taux-horaire" step="0.01" min="0" />
-
     <label for="prime-journaliere">Prime journalière (€) :</label>
     <input type="number" id="prime-journaliere" step="0.01" min="0" />
-
     <button id="btn-sauvegarder">Sauvegarder</button>
     <p id="msg-sauvegarde"></p>
   </section>
 
-<!-- Section CONTACT -->
-<section id="contact" class="tab-content">
-  <h2>Contacts Professionnels</h2>
-  <form id="form-contact">
-    <input type="text" name="nom" placeholder="Nom" required />
-    <input type="text" name="prenom" placeholder="Prénom" required />
-    <input type="tel" name="telephone" placeholder="Téléphone" required />
-    <input type="email" name="email" placeholder="Email" required />
-    <button type="submit" class="btn-primary">Ajouter Contact</button>
-  </form>
-
-  <div id="contacts-list" class="contacts-list-container">
-    <!-- Les contacts seront affichés ici dynamiquement sous ce format -->
-    <!-- Exemple d'un contact ajouté dynamiquement -->
-    <!--
-    <div class="contact-item">
-      <div class="contact-info">
-        <div class="contact-nomprenom">Dupont Jean</div>
-        <div class="contact-contact">Tel: 0123456789 | Email: jean.dupont@email.com</div>
-      </div>
-      <div class="contact-actions">
-        <button class="btn-danger btn-supprimer">Supprimer</button>
-      </div>
-    </div>
-    -->
-  </div>
-</section>
+  <!-- Section CONTACT -->
+  <section id="contact" class="tab-content">
+    <h2>Contacts Professionnels</h2>
+    <form id="form-contact">
+      <input type="text" name="nom" placeholder="Nom" required />
+      <input type="text" name="prenom" placeholder="Prénom" required />
+      <input type="tel" name="telephone" placeholder="Téléphone" required />
+      <input type="email" name="email" placeholder="Email" required />
+      <button type="submit" class="btn-primary">Ajouter Contact</button>
+    </form>
+    <div id="contacts-list" class="contacts-list-container"></div>
+  </section>
 
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="app.js"></script>
