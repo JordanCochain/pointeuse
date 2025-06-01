@@ -642,3 +642,44 @@ textarea.input-dark {
   padding: 10px;
   border-radius: 6px;
 }
+@media screen and (max-width: 768px) {
+  .form-outlook-style {
+    padding: 10px;
+    max-width: 100%;
+  }
+
+  .form-outlook-style .row {
+    flex-direction: column;
+  }
+
+  .btn-save,
+  .btn-supprimer,
+  .btn-modifier {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .evenement-ligne {
+    font-size: 14px;
+  }
+
+  nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  nav button {
+    width: 100%;
+    font-size: 16px;
+  }
+
+  .tab-content {
+    padding: 10px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
