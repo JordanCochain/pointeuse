@@ -8,7 +8,6 @@ if (window.firebase && window.db) {
         donnees = doc.data();
         localStorage.setItem("pointages", JSON.stringify(donnees));
         afficherInfos(formatDate(new Date()));
-        afficherMois(currentYear, currentMonth);
       }
     })
     .catch((error) => console.error("Erreur de récupération Firestore :", error));
@@ -18,7 +17,7 @@ let contacts = JSON.parse(localStorage.getItem("contacts")) || [];
 let currentDate = new Date();
 let currentMonth = currentDate.getMonth();
 let currentYear = currentDate.getFullYear();
-let currentTab = localStorage.getItem("ongletActif") || "pointage";
+let currentTab = localStorage.getItem("ongletActif");
 document.getElementById("form-contact").addEventListener("submit", function(e) {
   e.preventDefault();
 
@@ -283,7 +282,9 @@ document.querySelectorAll("nav button").forEach(btn => {
     document.querySelectorAll("section").forEach(s => s.classList.toggle("active", s.id === target));
     localStorage.setItem("ongletActif", target);
 
-    if (target === "pointage") {
+    if (btn.dataset.tab === "agenda") {
+    afficherMois(currentYear, currentMonth);
+    }if (target === "pointage") {
       afficherInfos(document.getElementById("date").value);
     } else if (target === "evenements") {
       afficherFormulaireEvenement(); // ← affiche formulaire enrichi dans l'onglet
@@ -296,11 +297,51 @@ document.querySelectorAll("nav button").forEach(btn => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-  const boutonActif = document.querySelector(`nav button[data-tab='${currentTab}']`);
-  if (boutonActif) boutonActif.click();
-   afficherContacts(); // 👈 ajouter ici
-});
+  const bouton = document.getElementById("enregistrer-evenement");
+  if (!bouton) return;
 
+  bouton.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const evenement = {
+      title: document.getElementById("titre-evenement").value.trim(),
+      startDate: document.getElementById("date-debut-evenement").value,
+      endDate: document.getElementById("date-fin-evenement").value,
+      startTime: document.getElementById("heure-debut-evenement").value,
+      endTime: document.getElementById("heure-fin-evenement").value,
+      location: document.getElementById("lieu-evenement").value.trim(),
+      description: document.getElementById("description-evenement").value.trim(),
+      allDay: document.getElementById("journee-entiere-evenement").checked,
+      repetition: document.getElementById("repetition-evenement").value,
+      rappel: document.getElementById("rappel-evenement").value,
+      userId: localStorage.getItem("userId") || "utilisateur_test",
+      timestamp: new Date().toISOString()
+    };
+
+    const jours = getDateRange(evenement.startDate, evenement.endDate);
+    jours.forEach(date => {
+      if (!donnees[date]) donnees[date] = {};
+      if (!donnees[date].evenements) donnees[date].evenements = [];
+      donnees[date].evenements.push(evenement);
+    });
+
+    localStorage.setItem("pointages", JSON.stringify(donnees));
+
+    if (window.firebase && window.db) {
+      await firebase.firestore().collection("evenements").add(evenement);
+    }
+
+    // ✅ Ne pas forcer le changement de mois
+    // ✅ Ne pas changer d'onglet
+    // ✅ Juste mettre à jour les détails si l'agenda est ouvert
+    if (document.getElementById("agenda").classList.contains("active")) {
+      afficherDetailDansAgenda(evenement.startDate);
+    }
+
+    document.getElementById("form-evenement-outlook").reset();
+    alert("Événement ajouté !");
+  });
+});
 
 function afficherContacts() {
   const container = document.getElementById("contacts-list");
@@ -426,17 +467,51 @@ function afficherMois(annee, mois) {
       }
     }
 
-    cell.onclick = () => {
-      afficherInfos(dateStr);
-      afficherDetailDansAgenda(dateStr);
-    };
+    cell.onclick = () => { afficherDetailDansAgenda(dateStr); };;
 
     calendrier.appendChild(cell);
   }
 }
 
 afficherMois(currentYear, currentMonth);
-// ---------- DÉTAIL JOUR avec résumé pointage + événements ----------
+  
+  document.getElementById("cancel-event").onclick = () => {
+  document.getElementById("modal-evenement-outlook").style.display = "none";
+};
+
+document.getElementById("save-event").onclick = async function(e) {
+  e.preventDefault();
+
+  const evenement = {
+    title: document.getElementById("titre-outlook").value.trim(),
+    startDate: document.getElementById("date-debut-outlook").value,
+    endDate: document.getElementById("date-fin-outlook").value,
+    startTime: document.getElementById("heure-debut-outlook").value,
+    endTime: document.getElementById("heure-fin-outlook").value,
+    location: document.getElementById("lieu-outlook").value.trim(),
+    description: document.getElementById("description-outlook").value.trim(),
+    allDay: document.getElementById("journee-entiere").checked,
+    userId: localStorage.getItem("userId") || "utilisateur_test",
+    timestamp: new Date().toISOString()
+  };
+
+  const jours = getDateRange(evenement.startDate, evenement.endDate);
+  jours.forEach(date => {
+    if (!donnees[date]) donnees[date] = {};
+    if (!donnees[date].evenements) donnees[date].evenements = [];
+    donnees[date].evenements.push(evenement);
+  });
+
+  localStorage.setItem("pointages", JSON.stringify(donnees));
+
+  if (window.firebase && window.db) {
+    await firebase.firestore().collection("evenements").add(evenement);
+  }
+
+  document.getElementById("modal-evenement-outlook").style.display = "none";
+  afficherMois(currentYear, currentMonth);
+};
+
 function afficherDetailDansAgenda(dateStr) {
   const container = document.getElementById("detail-jour");
   const pointage = donnees[dateStr] || {};
@@ -473,18 +548,50 @@ function afficherDetailDansAgenda(dateStr) {
   `;
 
   if (pointage.evenements && pointage.evenements.length > 0) {
-    html += "<ul>" + pointage.evenements.map(ev =>
-      `<li><strong>${ev.title}</strong><br>
-      Du ${ev.startDate} au ${ev.endDate} de ${ev.startTime || "?"} à ${ev.endTime || "?"}<br>
-      Lieu : ${ev.location}<br>
-      Description : ${ev.description}
-      </li>`
-    ).join("") + "</ul>";
+    html += "<ul id='liste-evenements'>";
+
+    pointage.evenements.forEach((ev, index) => {
+      html += `
+        <li class="evenement-ligne">
+          <strong>${ev.title}</strong><br>
+          Du ${ev.startDate} au ${ev.endDate} de ${ev.startTime || "?"} à ${ev.endTime || "?"}<br>
+          📍 ${ev.location}<br>
+          📝 ${ev.description || ""}<br>
+          <button class="btn-supprimer" data-date="${dateStr}" data-index="${index}">🗑 Supprimer</button>
+        </li>
+      `;
+    });
+
+    html += "</ul>";
   } else {
     html += "<p>Aucun événement.</p>";
   }
 
   container.innerHTML = html;
+
+  // 🎯 Gérer le clic sur les boutons Supprimer
+  container.querySelectorAll(".btn-supprimer").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const date = btn.dataset.date;
+      const index = btn.dataset.index;
+
+      if (confirm("Supprimer cet événement ?")) {
+        donnees[date].evenements.splice(index, 1);
+        if (donnees[date].evenements.length === 0) {
+          delete donnees[date].evenements;
+        }
+
+        localStorage.setItem("pointages", JSON.stringify(donnees));
+
+        if (window.firebase && window.db) {
+          console.log("⚠️ À adapter : suppression Firebase si activée");
+        }
+
+        afficherMois(currentYear, currentMonth);
+        afficherDetailDansAgenda(date);
+      }
+    });
+  });
 }
 // ---------- EXPORT EXCEL ----------
 document.getElementById("btn-export-excel").onclick = () => {
@@ -544,46 +651,24 @@ function getDateRange(start, end) {
   }
   return range;
 }
-function afficherFormulaireEvenement() {
-  const formContainer = document.getElementById("form-evenement");
-  if (!formContainer) return;
+document.addEventListener("DOMContentLoaded", () => {
+  const bouton = document.getElementById("enregistrer-evenement");
+  if (!bouton) return;
 
-  formContainer.innerHTML = `
-    <label for="titre">Titre :</label>
-    <input type="text" id="titre" required />
-
-    <label for="date-debut">Date de début :</label>
-    <input type="date" id="date-debut" required />
-
-    <label for="heure-debut">Heure de début :</label>
-    <input type="time" id="heure-debut" />
-
-    <label for="date-fin">Date de fin :</label>
-    <input type="date" id="date-fin" required />
-
-    <label for="heure-fin">Heure de fin :</label>
-    <input type="time" id="heure-fin" />
-
-    <label for="lieu">Lieu :</label>
-    <input type="text" id="lieu" />
-
-    <label for="description">Description :</label>
-    <textarea id="description" rows="3"></textarea>
-
-    <button type="submit">Ajouter l’événement</button>
-  `;
-
-  formContainer.querySelector("button[type='submit']").onclick = async (e) => {
+  bouton.addEventListener("click", async (e) => {
     e.preventDefault();
 
     const evenement = {
-      title: document.getElementById("titre").value.trim(),
-      startDate: document.getElementById("date-debut").value,
-      endDate: document.getElementById("date-fin").value,
-      startTime: document.getElementById("heure-debut").value,
-      endTime: document.getElementById("heure-fin").value,
-      location: document.getElementById("lieu").value.trim(),
-      description: document.getElementById("description").value.trim(),
+      title: document.getElementById("titre-evenement").value.trim(),
+      startDate: document.getElementById("date-debut-evenement").value,
+      endDate: document.getElementById("date-fin-evenement").value,
+      startTime: document.getElementById("heure-debut-evenement").value,
+      endTime: document.getElementById("heure-fin-evenement").value,
+      location: document.getElementById("lieu-evenement").value.trim(),
+      description: document.getElementById("description-evenement").value.trim(),
+      allDay: document.getElementById("journee-entiere-evenement").checked,
+      repetition: document.getElementById("repetition-evenement").value,
+      rappel: document.getElementById("rappel-evenement").value,
       userId: localStorage.getItem("userId") || "utilisateur_test",
       timestamp: new Date().toISOString()
     };
@@ -596,22 +681,40 @@ function afficherFormulaireEvenement() {
     });
 
     localStorage.setItem("pointages", JSON.stringify(donnees));
+
     if (window.firebase && window.db) {
       await firebase.firestore().collection("evenements").add(evenement);
     }
 
-    alert("Événement ajouté !");
-    afficherFormulaireEvenement(); // reset dynamique
+    // ✅ Mise à jour du mois courant pour forcer l'affichage
+    const d = new Date(evenement.startDate);
+    currentYear = d.getFullYear();
+    currentMonth = d.getMonth();
+
     afficherMois(currentYear, currentMonth);
-  };
-}
+    afficherDetailDansAgenda(evenement.startDate);
+
+    document.getElementById("form-evenement-outlook").reset();
+    alert("Événement ajouté !");
+  });
+});
 document.querySelectorAll("nav button").forEach(btn => {
   btn.addEventListener("click", () => {
+    const tabId = btn.dataset.tab;
+
     document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
-    document.getElementById(btn.dataset.tab).classList.add("active");
+    document.getElementById(tabId).classList.add("active");
 
     document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
+
+    // 🧠 Sauvegarder l’onglet actif
+    localStorage.setItem("onglet-actif", tabId);
+
+    // 🔁 Rafraîchir agenda si c’est l’onglet Agenda
+    if (tabId === "agenda") {
+      afficherMois(currentYear, currentMonth);
+    }
   });
 });
 
@@ -666,3 +769,128 @@ function afficherEstimationSalaireMensuel() {
 }
 
 document.getElementById("recalculer-salaire").addEventListener("click", afficherEstimationSalaireMensuel);
+document.addEventListener("DOMContentLoaded", () => {
+  const bouton = document.getElementById("enregistrer-evenement");
+  if (!bouton) return;
+
+  bouton.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    const evenement = {
+      title: document.getElementById("titre-evenement").value.trim(),
+      startDate: document.getElementById("date-debut-evenement").value,
+      endDate: document.getElementById("date-fin-evenement").value,
+      startTime: document.getElementById("heure-debut-evenement").value,
+      endTime: document.getElementById("heure-fin-evenement").value,
+      location: document.getElementById("lieu-evenement").value.trim(),
+      description: document.getElementById("description-evenement").value.trim(),
+      allDay: document.getElementById("journee-entiere-evenement").checked,
+      repetition: document.getElementById("repetition-evenement").value,
+      rappel: document.getElementById("rappel-evenement").value,
+      userId: localStorage.getItem("userId") || "utilisateur_test",
+      timestamp: new Date().toISOString()
+    };
+
+    const jours = getDateRange(evenement.startDate, evenement.endDate);
+    jours.forEach(date => {
+      if (!donnees[date]) donnees[date] = {};
+      if (!donnees[date].evenements) donnees[date].evenements = [];
+      donnees[date].evenements.push(evenement);
+    });
+
+    localStorage.setItem("pointages", JSON.stringify(donnees));
+    alert("Événement ajouté !");
+    afficherMois(currentYear, currentMonth);
+    afficherDetailDansAgenda(evenement.startDate);
+    document.getElementById("form-evenement-outlook").reset();
+  });
+});
+document.addEventListener("DOMContentLoaded", () => {
+  // 🔁 Récupérer l’onglet actif précédemment enregistré
+  const ongletActif = localStorage.getItem("onglet-actif");
+
+  // ❌ Ne pas forcer "pointage" si rien n’est défini
+  if (ongletActif) {
+    document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+    document.getElementById(ongletActif)?.classList.add("active");
+
+    document.querySelectorAll("nav button").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.tab === ongletActif);
+    });
+
+    if (ongletActif === "agenda") {
+      afficherMois(currentYear, currentMonth);
+    } else if (ongletActif === "pointage") {
+      afficherInfos(document.getElementById("date")?.value);
+    } else if (ongletActif === "evenements") {
+      afficherFormulaireEvenement?.();
+    } else if (ongletActif === "contact") {
+      afficherContacts?.();
+    } else if (ongletActif === "salaire") {
+      afficherEstimationSalaireMensuel?.();
+    }
+  }
+
+  // 🔁 Enregistrement de l’onglet actif au clic
+  document.querySelectorAll("nav button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tabId = btn.dataset.tab;
+
+      document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+      document.getElementById(tabId)?.classList.add("active");
+
+      document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      localStorage.setItem("onglet-actif", tabId);
+
+      if (tabId === "agenda") {
+        afficherMois(currentYear, currentMonth);
+      }
+    });
+  });
+
+  // ✅ Gestion du formulaire événement Outlook-like
+  const bouton = document.getElementById("enregistrer-evenement");
+  if (bouton) {
+    bouton.addEventListener("click", async (e) => {
+      e.preventDefault();
+
+      const evenement = {
+        title: document.getElementById("titre-evenement").value.trim(),
+        startDate: document.getElementById("date-debut-evenement").value,
+        endDate: document.getElementById("date-fin-evenement").value,
+        startTime: document.getElementById("heure-debut-evenement").value,
+        endTime: document.getElementById("heure-fin-evenement").value,
+        location: document.getElementById("lieu-evenement").value.trim(),
+        description: document.getElementById("description-evenement").value.trim(),
+        allDay: document.getElementById("journee-entiere-evenement").checked,
+        repetition: document.getElementById("repetition-evenement").value,
+        rappel: document.getElementById("rappel-evenement").value,
+        userId: localStorage.getItem("userId") || "utilisateur_test",
+        timestamp: new Date().toISOString()
+      };
+
+      const jours = getDateRange(evenement.startDate, evenement.endDate);
+      jours.forEach(date => {
+        if (!donnees[date]) donnees[date] = {};
+        if (!donnees[date].evenements) donnees[date].evenements = [];
+        donnees[date].evenements.push(evenement);
+      });
+
+      localStorage.setItem("pointages", JSON.stringify(donnees));
+
+      if (window.firebase && window.db) {
+        await firebase.firestore().collection("evenements").add(evenement);
+      }
+
+      if (document.getElementById("agenda")?.classList.contains("active")) {
+        afficherMois(currentYear, currentMonth);
+        afficherDetailDansAgenda(evenement.startDate);
+      }
+
+      document.getElementById("form-evenement-outlook").reset();
+      alert("Événement ajouté !");
+    });
+  }
+});

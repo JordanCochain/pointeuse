@@ -570,3 +570,75 @@ button:disabled,
   font-size: 1.1em;
   color: #0d47a1;
 }
+.form-outlook-style.dark {
+  background: #1e1e1e;
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 600px;
+  margin: 0 auto;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.form-outlook-style input,
+.form-outlook-style select,
+.form-outlook-style textarea {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background: #2a2a2a;
+  color: white;
+}
+
+textarea.input-dark {
+  resize: vertical;
+  height: 60px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.btn-save {
+  background-color: #0078d4;
+  border: none;
+  padding: 10px 16px;
+  color: white;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.btn-save:hover {
+  background-color: #005a9e;
+}
+
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.btn-supprimer {
+  background: #d9534f;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 6px;
+}
+.btn-supprimer:hover {
+  background: #c9302c;
+}
+.evenement-ligne {
+  margin-bottom: 15px;
+  background: #2a2a2a;
+  padding: 10px;
+  border-radius: 6px;
+}
