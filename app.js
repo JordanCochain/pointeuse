@@ -894,3 +894,52 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+const vapidPublicKey = "BLLm1M5a6mbosdP6muqeRZEgfLO_freUQz7klFcyiTtRGRLRxUtvlyxS6gxx6Knl324mu6kaL9wiv2WWTYUMcxE"; // Remplace par ta vraie clé publique
+
+// Convertit la clé en Uint8Array pour l'API Push
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+}
+
+async function subscribeToPushNotifications() {
+  if (!('serviceWorker' in navigator)) return;
+  if (!('PushManager' in window)) return;
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.warn("Notifications refusées");
+      return;
+    }
+
+    const registration = await navigator.serviceWorker.register('service-worker.js');
+    console.log('Service Worker enregistré');
+
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+    });
+
+    // Envoyer l’abonnement à ton serveur Node.js
+    await fetch("https://notif-server-az9m.onrender.com", {
+      method: "POST",
+      body: JSON.stringify(subscription),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
+    console.log("✅ Abonnement push envoyé au serveur.");
+  } catch (err) {
+    console.error("Erreur d’abonnement push :", err);
+  }
+}
+
+// Appelle la fonction à la fin du chargement
+subscribeToPushNotifications();

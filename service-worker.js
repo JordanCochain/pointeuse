@@ -37,3 +37,14 @@ self.addEventListener("fetch", event => {
     })
   );
 });
+self.addEventListener('push', function(event) {
+  const data = event.data.json();
+  console.log('📬 Notification reçue :', data);
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: '/icon-192.png'
+    })
+  );
+});
