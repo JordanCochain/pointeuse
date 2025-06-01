@@ -28,23 +28,33 @@ app.post('/subscribe', (req, res) => {
   res.status(201).json({ message: 'Abonnement enregistré.' });
 });
 
-// ✅ Route pour envoyer une notif test à tous
+// ✅ Route pour envoyer une notif test à tous les abonnés
 app.post('/send', (req, res) => {
   const payload = JSON.stringify({
     title: req.body.title || "Rappel",
     body: req.body.message || "Vous avez un événement à venir."
   });
 
+  let sent = 0;
+  let failed = 0;
+
   subscriptions.forEach((sub, index) => {
-    webpush.sendNotification(sub, payload).catch(err => {
-      console.error("Erreur d'envoi : ", err);
-      subscriptions.splice(index, 1); // Retirer si invalide
-    });
+    webpush.sendNotification(sub, payload)
+      .then(() => {
+        console.log("✅ Notification envoyée à :", sub.endpoint);
+        sent++;
+      })
+      .catch(err => {
+        console.error("❌ Erreur d'envoi à :", sub.endpoint, "\n", err);
+        subscriptions.splice(index, 1); // Supprime le mauvais abonné
+        failed++;
+      });
   });
 
-  res.status(200).json({ message: 'Notification envoyée.' });
+  res.status(200).json({
+    message: `Notifications envoyées. OK: ${sent}, Échecs: ${failed}`
+  });
 });
-
 // 🚀 Lancement serveur
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
