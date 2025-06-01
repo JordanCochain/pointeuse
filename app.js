@@ -927,7 +927,7 @@ async function subscribeToPushNotifications() {
     });
 
     // Envoyer l’abonnement à ton serveur Node.js
-    await fetch("https://notif-server-az9m.onrender.com", {
+    await fetch("https://notif-server-az9m.onrender.com/subscribe", {
       method: "POST",
       body: JSON.stringify(subscription),
       headers: {
@@ -942,4 +942,6 @@ async function subscribeToPushNotifications() {
 }
 
 // Appelle la fonction à la fin du chargement
-subscribeToPushNotifications();
+document.addEventListener("DOMContentLoaded", () => {
+  subscribeToPushNotifications();
+});
