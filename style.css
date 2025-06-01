@@ -528,3 +528,45 @@ button:disabled,
   color: #eee;
   box-shadow: none;
 }
+/* Préférences */
+.preferences-container {
+  max-width: 500px;
+  margin: 2em auto;
+  padding: 2em;
+  background: #f8faff;
+  border-radius: 16px;
+  box-shadow: 0 0 10px #c6dbff;
+  border: 1px solid #e0eaff;
+}
+
+.titre-preferences {
+  text-align: center;
+  color: #003087;
+  font-size: 1.5em;
+  margin-bottom: 1em;
+}
+
+.btn-synchro {
+  background-color: #116611;
+  color: white;
+  font-weight: bold;
+  padding: 0.5em 1em;
+  border-radius: 8px;
+  border: none;
+  box-shadow: 2px 2px 5px #ccc;
+  cursor: pointer;
+}
+
+.btn-synchro:hover {
+  background-color: #0d550d;
+}
+.salaire-box {
+  background: #e3f2fd;
+  padding: 1em;
+  border-radius: 12px;
+  box-shadow: 0 0 5px #90caf9;
+  max-width: 400px;
+  margin: 0 auto;
+  font-size: 1.1em;
+  color: #0d47a1;
+}

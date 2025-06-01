@@ -69,6 +69,7 @@ document.getElementById("btn-depart").onclick = () => enregistrerHeure("depart")
 
 document.getElementById("btn-enregistrer").onclick = () => {
   alert("Heures enregistrées !");
+  calculerSalaireMensuel();
 };
 
 function enregistrerHeure(type) {
@@ -120,6 +121,65 @@ function mettreAJourBoutons(dateStr) {
       info.classList.toggle("visible", dejaPointe);
     }
   });
+}
+function calculerHeures(data) {
+  const parseTime = str => {
+    const [h, m] = str.split(":").map(Number);
+    return h + m / 60;
+  };
+
+  if (!data.arrivee || !data.depart) return 0;
+
+  const arrivee = parseTime(toTimeString(new Date(data.arrivee)));
+  const depart = parseTime(toTimeString(new Date(data.depart)));
+  const debutPause = data.debutPause ? parseTime(toTimeString(new Date(data.debutPause))) : 0;
+  const finPause = data.finPause ? parseTime(toTimeString(new Date(data.finPause))) : 0;
+
+  const travail = (depart - arrivee) - (finPause - debutPause);
+  return Math.max(0, travail);
+}
+function calculerSalaireMensuel() {
+  const tauxHoraire = parseFloat(document.getElementById("taux-horaire")?.value || "0");
+  const seuilHS25 = parseFloat(document.getElementById("heures-sup25")?.value || "35");
+  const seuilHS50 = parseFloat(document.getElementById("heures-sup50")?.value || "43");
+  const primeSemestrielle = document.getElementById("prime-semestrielle")?.checked || false;
+
+  const now = new Date();
+  const moisActuel = now.getMonth() + 1;
+  const anneeActuelle = now.getFullYear();
+
+  let totalNormales = 0;
+  let totalSup25 = 0;
+  let totalSup50 = 0;
+
+  for (let jour = 1; jour <= 31; jour++) {
+    const jourStr = `${anneeActuelle}-${String(moisActuel).padStart(2, '0')}-${String(jour).padStart(2, '0')}`;
+    const data = donnees[jourStr];
+    if (!data || !data.arrivee || !data.depart) continue;
+
+    const heures = calculerHeures(data);
+    if (heures <= seuilHS25) {
+      totalNormales += heures;
+    } else if (heures <= seuilHS50) {
+      totalNormales += seuilHS25;
+      totalSup25 += heures - seuilHS25;
+    } else {
+      totalNormales += seuilHS25;
+      totalSup25 += seuilHS50 - seuilHS25;
+      totalSup50 += heures - seuilHS50;
+    }
+  }
+
+  const salaireNormal = totalNormales * tauxHoraire;
+  const salaireSup25 = totalSup25 * tauxHoraire * 1.25;
+  const salaireSup50 = totalSup50 * tauxHoraire * 1.5;
+  const prime = primeSemestrielle ? 100 : 0; // ajustable
+
+  const total = salaireNormal + salaireSup25 + salaireSup50 + prime;
+
+  document.getElementById("heures-travail").textContent = `Heures normales : ${totalNormales.toFixed(2)} h`;
+  document.getElementById("heures-sup").textContent = `HS 25% : ${totalSup25.toFixed(2)} h, HS 50% : ${totalSup50.toFixed(2)} h`;
+  document.getElementById("salaire-estime").textContent = `Salaire brut estimé : ${total.toFixed(2)} €`;
 }
 
 function afficherInfos(dateStr) {
@@ -206,6 +266,8 @@ function enregistrerHeure(type) {
 
 document.getElementById("date").value = formatDate(new Date());
 afficherInfos(formatDate(new Date()));
+calculerSalaireMensuel();
+
 
 document.getElementById("date").addEventListener("change", (e) => {
   const date = e.target.value;
@@ -227,6 +289,8 @@ document.querySelectorAll("nav button").forEach(btn => {
       afficherFormulaireEvenement(); // ← affiche formulaire enrichi dans l'onglet
     } else if (target === "contact") {
       afficherContacts(); // ✅ affiche les contacts à l'ouverture de l'onglet
+    } else if (target === "salaire") {
+      afficherEstimationSalaireMensuel(); // ← ✅ appel de ta fonction
     }
   });
 });
@@ -236,6 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (boutonActif) boutonActif.click();
    afficherContacts(); // 👈 ajouter ici
 });
+
 
 function afficherContacts() {
   const container = document.getElementById("contacts-list");
@@ -540,3 +605,64 @@ function afficherFormulaireEvenement() {
     afficherMois(currentYear, currentMonth);
   };
 }
+document.querySelectorAll("nav button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-content").forEach(tab => tab.classList.remove("active"));
+    document.getElementById(btn.dataset.tab).classList.add("active");
+
+    document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
+document.getElementById("forcer-synchro").addEventListener("click", () => {
+  alert("Synchronisation forcée (simulée).");
+});
+
+document.getElementById("voir-tutoriel").addEventListener("click", () => {
+  alert("Ouverture du tutoriel (à implémenter).");
+});
+function afficherEstimationSalaireMensuel() {
+  const tauxHoraire = parseFloat(document.getElementById("taux-horaire")?.value || "0");
+  const seuilHS25 = parseFloat(document.getElementById("heures-sup25")?.value || "35");
+  const seuilHS50 = parseFloat(document.getElementById("heures-sup50")?.value || "43");
+  const primeSemestrielle = document.getElementById("prime-semestrielle")?.checked || false;
+
+  const now = new Date();
+  const moisActuel = now.getMonth() + 1;
+  const anneeActuelle = now.getFullYear();
+
+  let totalNormales = 0;
+  let totalSup25 = 0;
+  let totalSup50 = 0;
+
+  for (let jour = 1; jour <= 31; jour++) {
+    const jourStr = `${anneeActuelle}-${String(moisActuel).padStart(2, '0')}-${String(jour).padStart(2, '0')}`;
+    const data = donnees[jourStr];
+    if (!data || !data.arrivee || !data.depart) continue;
+
+    const heures = calculerHeures(data);
+    if (heures <= seuilHS25) {
+      totalNormales += heures;
+    } else if (heures <= seuilHS50) {
+      totalNormales += seuilHS25;
+      totalSup25 += heures - seuilHS25;
+    } else {
+      totalNormales += seuilHS25;
+      totalSup25 += seuilHS50 - seuilHS25;
+      totalSup50 += heures - seuilHS50;
+    }
+  }
+
+  const salaireNormal = totalNormales * tauxHoraire;
+  const salaireSup25 = totalSup25 * tauxHoraire * 1.25;
+  const salaireSup50 = totalSup50 * tauxHoraire * 1.5;
+  const prime = primeSemestrielle ? 100 : 0;
+  const total = salaireNormal + salaireSup25 + salaireSup50 + prime;
+
+  document.getElementById("salaire-heures-normales").textContent = `Heures normales : ${totalNormales.toFixed(2)} h`;
+  document.getElementById("salaire-heures-sup").textContent = `HS 25% : ${totalSup25.toFixed(2)} h, HS 50% : ${totalSup50.toFixed(2)} h`;
+  document.getElementById("salaire-brut-estime").textContent = `Salaire brut estimé : ${total.toFixed(2)} €`;
+}
+
+document.getElementById("recalculer-salaire").addEventListener("click", afficherEstimationSalaireMensuel);

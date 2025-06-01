@@ -16,9 +16,12 @@
   <nav>
     <button data-tab="pointage" class="active">Pointage</button>
     <button data-tab="agenda">Agenda</button>
-    <button data-tab="parametres">Paramètres</button>
     <button data-tab="contact">Contact</button>
     <button data-tab="evenements">Événements</button>
+    <button data-tab="ConditionsContrat">Conditions contrat</button>
+    <button data-tab="salaire">Salaire mois en cours</button>
+    <button data-tab="preferences">Préférences</button>
+
   </nav>
 
 <section id="pointage" class="tab-content active">
@@ -73,14 +76,61 @@
     </button>
   </section>
 
-  <!-- Section PARAMETRES -->
-  <section id="parametres" class="tab-content">
-    <label for="taux-horaire">Taux horaire (€) :</label>
-    <input type="number" id="taux-horaire" step="0.01" min="0" />
-    <label for="prime-journaliere">Prime journalière (€) :</label>
-    <input type="number" id="prime-journaliere" step="0.01" min="0" />
-    <button id="btn-sauvegarder">Sauvegarder</button>
-    <p id="msg-sauvegarde"></p>
+  <!-- Section Conditions Contrat -->
+  <section id="ConditionsContrat" class="tab-content">
+    <h2>Conditions de travail et rémunération</h2>
+
+  <label for="qualification">Qualification :</label>
+  <input type="text" id="qualification" value="Technicien de réparation" disabled />
+
+  <label for="salaire-base">Salaire mensuel brut (€) :</label>
+  <input type="number" id="salaire-base" step="0.01" value="2385.00" />
+
+  <label for="taux-horaire">Taux horaire brut (€) :</label>
+  <input type="number" id="taux-horaire" step="0.01" value="15.72" />
+
+  <label for="duree-hebdo">Durée hebdomadaire (heures) :</label>
+  <input type="number" id="duree-hebdo" step="0.1" value="35" />
+
+  <label for="jours-par-semaine">Jours travaillés par semaine :</label>
+  <input type="number" id="jours-par-semaine" min="1" max="7" value="4" />
+
+  <label for="heures-sup25">Heures sup. taux 25% au-delà de :</label>
+  <input type="number" id="heures-sup25" step="0.1" value="35" />
+
+  <label for="heures-sup50">Heures sup. taux 50% au-delà de :</label>
+  <input type="number" id="heures-sup50" step="0.1" value="43" />
+
+  <label for="prime-semestrielle">Prime semestrielle (activable à 2 mois) :</label>
+  <input type="checkbox" id="prime-semestrielle" />
+
+  <label for="valeur-ticket">Ticket restaurant (€) :</label>
+  <input type="number" id="valeur-ticket" step="0.01" value="8.50" />
+
+  <label for="part-salariale-tr">Part salariale ticket restaurant (€) :</label>
+  <input type="number" id="part-salariale-tr" step="0.01" value="3.40" />
+
+  <label for="horaire-debut">Début journée type :</label>
+  <input type="time" id="horaire-debut" value="07:30" />
+
+  <label for="horaire-fin">Fin journée type :</label>
+  <input type="time" id="horaire-fin" value="17:00" />
+
+  <label for="periode-contrat">Période de contrat :</label>
+  <input type="text" id="periode-contrat" value="26/05/2025 au 24/08/2025" disabled />
+</section>  </section>
+
+<!-- Section Salaire -->
+<section id="salaire" class="tab-content">
+  <h2>Estimation du salaire - Mois en cours</h2>
+
+    <div class="salaire-box">
+      <p id="salaire-heures-normales"></p>
+      <p id="salaire-heures-sup"></p>
+      <p id="salaire-brut-estime"></p>
+    </div>
+
+    <button id="recalculer-salaire" class="btn-primary" style="margin-top:1em;">Recalculer</button>
   </section>
 
   <!-- Section CONTACT -->
@@ -101,6 +151,33 @@
       <form id="form-evenement"></form>
     <div id="liste-evenements" style="margin-top: 20px;"></div>
   </section>
+
+  <section id="preferences" class="tab-content">
+  <div class="preferences-container">
+    <h2 class="titre-preferences">Paramètres</h2>
+    
+    <label><input type="checkbox" id="mode-sombre"> Mode sombre</label><br>
+    <label><input type="checkbox" id="notifications"> Notifications (placeholder)</label>
+
+    <br><br>
+    <button class="btn-synchro" id="forcer-synchro">Forcer synchronisation</button>
+
+    <br><br>
+    <label for="langue-select">Langue :</label>
+    <select id="langue-select">
+      <option value="fr">Français</option>
+      <option value="en">English</option>
+    </select>
+
+    <br><br>
+    <button id="voir-tutoriel">Voir le tutoriel</button>
+
+    <br><br>
+    <hr>
+    <button id="sauvegarder-localement">Sauvegarder localement</button>
+    <button id="restaurer-sauvegarde">Restaurer une sauvegarde</button>
+  </div>
+</section>
 
   <!-- Firebase SDK -->
   <script type="module">
